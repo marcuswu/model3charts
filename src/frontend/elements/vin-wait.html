@@ -1,0 +1,153 @@
+<link rel="import" href="../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../bower_components/iron-ajax/iron-ajax.html">
+<link rel="import" href="../bower_components/datetime-picker/date-picker.html">
+<link rel="import" href="../bower_components/neon-animation/web-animations.html">
+<link rel="import" href="../bower_components/paper-dropdown-menu/paper-dropdown-menu-light.html">
+
+<dom-module id="vin-wait">
+    <template>
+        <style>
+        date-picker {
+            font-family: 'Roboto', 'Noto', sans-serif;
+            font-size: 14pt;
+            color: #000;
+        }
+        paper-tabs {
+            font-family: 'Roboto', 'Noto', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            width: 100%;
+            text-transform: uppercase;
+            margin-bottom: 1px;
+            background-color: #0303B1;
+        }
+        #vin-wait {
+            display: block;
+        }
+        #vin_wait_table {
+            width: 100%;
+            height: 100%;
+            font-size: 12pt;
+            color: #000;
+            border-collapse: collapse;
+        }
+        #vin_wait_table th {
+            width: 14.29%;
+            border: 1px solid black;
+        }
+        #vin_wait_table td {
+            text-align: center;
+            border: 1px solid black;
+        }
+
+        </style>
+        <iron-ajax auto
+            id="vin_wait_data"
+            url=""
+            handleAs="json"
+            method="GET"
+            on-response="gotVinWaitData"
+            on-error="getVinWaitDataError"></iron-ajax>
+        <h1>VINS Assigned / Cars Configured by Date and Configuration</h1>
+        <date-picker id="start_date" label="Start Date" placeholder="Optional Start Date" on-value-changed="startDateChanged"></date-picker>
+        <date-picker id="end_date" label="End Date" placeholder="Optional End Date" on-value-changed="endDateChanged"></date-picker>
+        <paper-dropdown-menu-light id="country" label="Country" on-iron-select="countrySelect">
+            <paper-listbox id="country_items_list" slot="dropdown-content" class="dropdown-content">
+                <template is="dom-repeat" id="country_items">
+                    <paper-item>{{item}}</paper-item>
+                </template>
+            </paper-listbox>
+        </paper-dropdown-menu-light>
+        <paper-dropdown-menu-light id="wheels" label="Wheels" on-iron-select="wheelsSelect">
+            <paper-listbox slot="dropdown-content" class="dropdown-content" selected="0">
+                <paper-item>Aero Wheels</paper-item>
+                <paper-item>Sport Wheels</paper-item>
+            </paper-listbox>
+        </paper-dropdown-menu-light>
+        <table id="vin_wait_table">
+            <tr>
+                <th>Configuration Date</th>
+                <th>Deep Blue Metallic</th>
+                <th>Midnight Silver Metallic</th>
+                <th>Pearl White Multi-Coat</th>
+                <th>Red Multi-Coat</th>
+                <th>Silver Metallic</th>
+                <th>Solid Black</th>
+            </tr>
+                <template is="dom-repeat" id="table_items">
+                    <tr>
+                        <th>{{item.date}}</th>
+                        <td style="background-color: {{item.blue.color}};">{{item.blue.vins}} / {{item.blue.total}}</td>
+                        <td style="background-color: {{item.darkSilver.color}};">{{item.darkSilver.vins}} / {{item.darkSilver.total}}</td>
+                        <td style="background-color: {{item.white.color}};">{{item.white.vins}} / {{item.white.total}}</td>
+                        <td style="background-color: {{item.red.color}};">{{item.red.vins}} / {{item.red.total}}</td>
+                        <td style="background-color: {{item.silver.color}};">{{item.silver.vins}} / {{item.silver.total}}</td>
+                        <td style="background-color: {{item.black.color}};">{{item.black.vins}} / {{item.black.total}}</td>
+                    </tr>
+                </template>
+        </table>
+    </template>
+
+    <script>
+    class VinWait extends Polymer.Element {
+        static get is() {
+            return "vin-wait";
+        }
+        static get properties() {
+            return {
+                waitData: {
+                    type: Object,
+                    notify: true
+                },
+            };
+        }
+        constructor() {
+            super();
+            this.currentTab = 0;
+        }
+        ready() {
+            super.ready();
+            this.$.country_items.items = ['Canada', 'USA'];
+            this.$.country_items_list.selected = 1;
+            this.$.vin_wait_data.url = rootServiceUrl + "/vinWaitData";
+        }
+        chartRefresh() {
+            // Build params, set them -- automatically sends request
+            var params = {};
+            if (this.$.country.value) {
+                params.country = this.$.country.selectedItem.textContent;
+            }
+            if (this.$.start_date.value) {
+                params.start = this.$.start_date.date;
+            }
+            if (this.$.end_date.value) {
+                params.end = this.$.end_date.date;
+            }
+            this.$.vin_wait_data.params = params;
+        }
+        wheelsSelect() {
+            if (!this.waitData) {
+                return;
+            }
+            const selected = this.$.wheels.value.startsWith("Aero") ? "aero" : "sport";
+            this.$.table_items.items = this.waitData.map(x => x[selected]);
+        }
+        countrySelect() {
+            this.chartRefresh();
+        }
+        startDateChanged() {
+            this.chartRefresh();
+        }
+        endDateChanged() {
+            this.chartRefresh();
+        }
+        gotVinWaitData(evt, request) {
+            this.waitData = request.response;
+            this.$.table_items.items = this.waitData.map(x => x[this.currentTab == 0 ? "aero" : "sport"]);
+        }
+        getVinWaitDataError(request, error) {
+            //this.$.refresh_error.show();
+        }
+    }
+    customElements.define(VinWait.is, VinWait);
+    </script>
+</dom-module>

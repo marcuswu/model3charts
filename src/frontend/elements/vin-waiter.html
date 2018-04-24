@@ -1,0 +1,122 @@
+<link rel="import" href="../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../bower_components/iron-ajax/iron-ajax.html">
+<link rel="import" href="../bower_components/google-chart/google-chart.html">
+
+<dom-module id="vin-waiters">
+    <template>
+        <style>
+        google-chart {
+          min-height: 600px;
+          width: 100%;
+        }
+        </style>
+        <iron-ajax auto
+            id="vin_waiter_data"
+            url=""
+            handleas="json"
+            method="get"
+            on-response="gotWaiterData"
+            on-error="getWaiterDataError"></iron-ajax>
+        <h1>Current VIN Waits by Color</h1>
+        <p>I recommend putting a minimum date on this one since some entries are stale (never updated with VIN data)</p>
+        <date-picker id="start_date" label="Start Date" placeholder="Optional Start Date" on-value-changed="startDateChanged"></date-picker>
+        <date-picker id="end_date" label="End Date" placeholder="Optional End Date" on-value-changed="endDateChanged"></date-picker>
+        <paper-dropdown-menu-light id="country" label="Country" on-iron-select="countrySelect">
+            <paper-listbox id="country_items_list" slot="dropdown-content" class="dropdown-content">
+                <template is="dom-repeat" id="country_items">
+                    <paper-item>{{item}}</paper-item>
+                </template>
+            </paper-listbox>
+        </paper-dropdown-menu-light>
+        <paper-dropdown-menu-light id="wheels" label="Wheels" on-iron-select="wheelsSelect">
+            <paper-listbox slot="dropdown-content" class="dropdown-content" selected="0">
+                <paper-item value="aero">Aero Wheels</paper-item>
+                <paper-item value="sport">Sport Wheels</paper-item>
+            </paper-listbox>
+        </paper-dropdown-menu-light>
+        <google-chart
+            id="vin_waiter_chart"
+            type='column'>
+        </google-chart>
+    </template>
+
+    <script>
+    class VinWaiters extends Polymer.Element {
+        static get is() {
+            return "vin-waiters";
+        }
+        static get properties() {
+            return {
+                chartData: {
+                    type: Object,
+                    notify: true
+                },
+                chart: {
+                    type: Object
+                }
+            };
+        }
+        constructor() {
+            super();
+        }
+        ready() {
+            super.ready();
+            this.$.country_items.items = ['Canada', 'USA'];
+            this.$.country_items_list.selected = 1;
+            this.$.vin_waiter_data.url = rootServiceUrl + "/vinWaiterData";
+        }
+        chartRefresh() {
+            // Build params, set them -- automatically sends request
+            var params = {};
+            if (this.$.wheels.value) {
+                params.wheels = this.$.wheels.selectedItem.getAttribute('value');
+            }
+            if (this.$.country.value) {
+                params.country = this.$.country.selectedItem.textContent;
+            }
+            if (this.$.start_date.value) {
+                params.start = this.$.start_date.date;
+            }
+            if (this.$.end_date.value) {
+                params.end = this.$.end_date.date;
+            }
+            this.$.vin_waiter_data.params = params;
+        }
+        wheelsSelect() {
+            this.chartRefresh();
+        }
+        countrySelect() {
+            this.chartRefresh();
+        }
+        startDateChanged() {
+            this.chartRefresh();
+        }
+        endDateChanged() {
+            this.chartRefresh();
+        }
+        gotWaiterData(evt, request) {
+            this.chartData = request.response;
+            var vinWaitData = [
+                ['Deep Blue Metallic', this.chartData.blue.min, this.chartData.blue.avg, this.chartData.blue.max ],
+                ['Midnight Silver Metallic', this.chartData.darkSilver.min, this.chartData.darkSilver.avg, this.chartData.darkSilver.max ],
+                ['Pearl White Multi-Coat', this.chartData.white.min, this.chartData.white.avg, this.chartData.white.max ],
+                ['Red Multi-Coat',  this.chartData.red.min, this.chartData.red.avg, this.chartData.red.max ],
+                ['Silver Metallic', this.chartData.silver.min, this.chartData.silver.avg, this.chartData.silver.max ],
+                ['Solid Black', this.chartData.black.min, this.chartData.black.avg, this.chartData.black.max ]
+            ];
+            this.$.vin_waiter_chart.cols = [
+                { "label": 'Color', "type": 'string' },
+                { "label": 'Min', "type": "number" },
+                { "label": 'Average', "type": "number" },
+                { "label": 'Max', "type": "number" }
+            ];
+            this.$.vin_waiter_chart.options = { };
+            this.$.vin_waiter_chart.rows = vinWaitData;
+        }
+        getWaiterDataError(request, error) {
+            //this.$.refresh_error.show();
+        }
+    }
+    customElements.define(VinWaiters.is, VinWaiters);
+    </script>
+</dom-module>

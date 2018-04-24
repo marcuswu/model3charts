@@ -1,0 +1,85 @@
+<link rel="import" href="../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../bower_components/iron-ajax/iron-ajax.html">
+<link rel="import" href="../bower_components/google-chart/google-chart.html">
+
+<dom-module id="vin-chart">
+    <template>
+        <style>
+        google-chart {
+          min-height: 600px;
+          width: 100%;
+        }
+        </style>
+        <iron-ajax auto
+            id="chart_data"
+            url=""
+            handleAs="json"
+            method="GET"
+            on-response="gotChartData"
+            on-error="getChartDataError"></iron-ajax>
+        <h1>VINS Assigned by Date</h1>
+        <google-chart
+            id="vin_chart"
+            type='scatter'
+            cols='[{"label":"Date", "type":"date"}, {"label":"VINs", "type":"number"}, {"label": "Trend Line", "type": "number"}]'>
+        </google-chart>
+    </template>
+
+    <script>
+    class VinChart extends Polymer.Element {
+        static get is() {
+            return "vin-chart";
+        }
+        static get properties() {
+            return {
+                chartData: {
+                    type: Object,
+                    notify: true
+                },
+                chart: {
+                    type: Object
+                }
+            };
+        }
+        constructor() {
+            super();
+        }
+        ready() {
+            super.ready();
+            this.$.chart_data.url = rootServiceUrl + "/vinChartData";
+        }
+        chartRefresh() {
+            this.$.chart_data.generateRequest();
+        }
+        gotChartData(evt, request) {
+            this.chartData = request.response;
+            var formatDate = x => new Date(x).toLocaleDateString("en-US", { month: 'short', day: 'numeric', year: 'numeric' });
+            var vinData = this.chartData.vinData.map( x => [new Date(x.x), parseInt(x.y), null] );
+            this.chartData.trendData.forEach(function(trendPoint) {
+                var trendDate = new Date(trendPoint.x);
+                var vinIndex = vinData.reduce( function(acc, val, index, arr) {
+                    return val[0].getTime() == trendDate.getTime() ? index : acc;
+                }, 0);
+                if (vinData[vinIndex][0].getTime() != trendDate.getTime()) {
+                    // Couldn't find it (no VINs assigned that day), so find the nearest and insert
+                    var insertAt = vinData.findIndex( (val, index, arr) => val[0].getTime() > trendDate.getTime());
+                    vinData.splice(insertAt, 0, [trendDate, null, trendPoint.y]);
+                    return;
+                }
+                vinData[vinIndex][2] = parseInt(trendPoint.y);
+            });
+            this.$.vin_chart.options = {
+                "hAxis": { "title": "Date" },
+                "vAxis": { "title": "VIN", "minValue": 0},
+                "interpolateNulls": true,
+                "series": { 0: {"pointSize": 2}, 1: { "lineWidth": 2, "pointSize": 2 }}
+            };
+            this.$.vin_chart.rows = vinData;
+        }
+        getChartDataError(request, error) {
+            //this.$.refresh_error.show();
+        }
+    }
+    customElements.define(VinChart.is, VinChart);
+    </script>
+</dom-module>

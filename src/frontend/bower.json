@@ -1,0 +1,32 @@
+{
+  "name": "model3charts",
+  "version": "0.0.0",
+  "homepage": "",
+  "authors": [
+    "Marcus Wu <mwu@digitaltorque.com>"
+  ],
+  "main": "index.html",
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "bower": "*",
+    "install": "~1.0.4",
+    "paper-styles": "^2.1.0",
+    "polymer": "^2.6.0",
+    "iron-ajax": "^2.1.3",
+    "paper-datatable-api": "^2.0.15",
+    "google-chart": "^2.0.0",
+    "iron-selector": "^2.1.0",
+    "iron-page-scroll": "chrisjagoda/iron-page-scroll#^1.1.0",
+    "paper-card": "PolymerElements/paper-card#^2.1.0",
+    "paper-tabs": "PolymerElements/paper-tabs#^2.1.1",
+    "paper-dropdown-menu": "PolymerElements/paper-dropdown-menu#^2.1.0",
+    "datetime-picker": "fooloomanzoo/datetime-picker#^2.9.0"
+  }
+}

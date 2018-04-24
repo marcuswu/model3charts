@@ -1,0 +1,125 @@
+<link rel="import" href="../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../bower_components/iron-ajax/iron-ajax.html">
+<link rel="import" href="../bower_components/google-chart/google-chart.html">
+
+<dom-module id="vin-color-count">
+    <template>
+        <style>
+        google-chart {
+          min-height: 600px;
+          width: 100%;
+        }
+        </style>
+        <iron-ajax auto
+            id="color_chart_data"
+            url=""
+            handleas="json"
+            method="get"
+            on-response="gotChartData"
+            on-error="getChartDataError"></iron-ajax>
+        <h1>VIN Colors Assigned by Date</h1>
+        <date-picker id="start_date" label="Start Date" placeholder="Optional Start Date" on-value-changed="startDateChanged"></date-picker>
+        <date-picker id="end_date" label="End Date" placeholder="Optional End Date" on-value-changed="endDateChanged"></date-picker>
+        <paper-dropdown-menu-light id="country" label="Country" on-iron-select="countrySelect">
+            <paper-listbox id="country_items_list" slot="dropdown-content" class="dropdown-content">
+                <template is="dom-repeat" id="country_items">
+                    <paper-item>{{item}}</paper-item>
+                </template>
+            </paper-listbox>
+        </paper-dropdown-menu-light>
+        <paper-dropdown-menu-light id="wheels" label="Wheels" on-iron-select="wheelsSelect">
+            <paper-listbox slot="dropdown-content" class="dropdown-content" selected="0">
+                <paper-item value="aero">Aero Wheels</paper-item>
+                <paper-item value="sport">Sport Wheels</paper-item>
+            </paper-listbox>
+        </paper-dropdown-menu-light>
+        <google-chart
+            id="vin_color_count"
+            type='column'>
+        </google-chart>
+    </template>
+
+    <script>
+    class VinColorCount extends Polymer.Element {
+        static get is() {
+            return "vin-color-count";
+        }
+        static get properties() {
+            return {
+                chartData: {
+                    type: Object,
+                    notify: true
+                },
+                chart: {
+                    type: Object
+                }
+            };
+        }
+        constructor() {
+            super();
+        }
+        ready() {
+            super.ready();
+            this.$.country_items.items = ['Canada', 'USA'];
+            this.$.country_items_list.selected = 1;
+            this.$.color_chart_data.url = rootServiceUrl + "/vinColorCount";
+        }
+        chartRefresh() {
+            // Build params, set them -- automatically sends request
+            var params = {};
+            if (this.$.wheels.value) {
+                params.wheels = this.$.wheels.selectedItem.getAttribute('value');
+            }
+            if (this.$.country.value) {
+                params.country = this.$.country.selectedItem.textContent;
+            }
+            if (this.$.start_date.value) {
+                params.start = this.$.start_date.date;
+            }
+            if (this.$.end_date.value) {
+                params.end = this.$.end_date.date;
+            }
+            this.$.color_chart_data.params = params;
+        }
+        wheelsSelect() {
+            this.chartRefresh();
+        }
+        countrySelect() {
+            this.chartRefresh();
+        }
+        startDateChanged() {
+            this.chartRefresh();
+        }
+        endDateChanged() {
+            this.chartRefresh();
+        }
+        gotChartData(evt, request) {
+            this.chartData = request.response;
+            var vinColorData = this.chartData.map( x => [ x.date, x.blue, x.darkSilver, x.white, x.red, x.silver, x.black] );
+            vinColorData.shift();
+            this.$.vin_color_count.cols = [
+                { "label": 'Date', "type": 'string' },
+                { "label": 'Deep Blue Metallic', "type": "number" },
+                { "label": 'Midnight Silver Metallic', "type": "number" },
+                { "label": 'Pearl White Multi-Coat', "type": "number" },
+                { "label": 'Red Multi-Coat', "type": "number" },
+                { "label": 'Silver Metallic', "type": "number" },
+                { "label": 'Solid Black', "type": "number" },
+            ];
+            this.$.vin_color_count.options = {
+                "bars": 'vertical',
+                "vAxis": {format: 'decimal', title: '# of VINs'},
+                hAxis: { title: 'Date' },
+                "colors": [ 'Blue', 'DimGrey', 'White', 'Red', 'Silver', 'Black'],
+                "isStacked": true,
+                "backgroundColor": '#EEE'
+            };
+            this.$.vin_color_count.rows = vinColorData.reverse();
+        }
+        getChartDataError(request, error) {
+            //this.$.refresh_error.show();
+        }
+    }
+    customElements.define(VinColorCount.is, VinColorCount);
+    </script>
+</dom-module>

@@ -1,0 +1,46 @@
+figure out what data is needed for the charts
+work out API requests to pull the relevant data
+
+Invites
+  # of invites per month
+  # of invites per week
+  reported daily invites
+  invite status of owners by reservation date (stacked graph)
+  invite status of non-owners by reservation date (stacked graph)
+  invite status of owners by first production delivery estimate
+  invite status of non-owners by first production delivery estimate
+  invite status of canada owners by reservation date
+  invite status of canada non-owners by reservation date
+  configured vs deferring percentages
+  defer reason pie graph
+  defer rate pie graph
+
+Production
+  Model 3 VINs and VIN assignment dates reported by buyers
+    This plots points, but also draws some kind of trend line
+  configuration type to configuration date listing of VINs vs orders
+  same for canada
+
+Delivery
+  Monthly scheduled deliveries
+  Weekly scheduled deliveries
+  Daily scheduled deliveries
+  Configuration to VIN in last 3 weeks
+  VIN to delivery in last 3 weeks
+  Configuration to Delivery in last 3 weeks
+  Configuration to VIN in days for each state
+  VIN to delivery in days for each state
+  Configuration to delivery in days for each state
+
+VIN chart
+  Get all VINs where assignment date is not null and VIN is not null
+  Calculate slope, intercept from VINs in date range as data y, VINs as x
+  Calculate trendline point as slop * date + intercept
+  x-axis vin assignment date
+  y-axis / series vin and trendline
+
+  linear regression
+    slope = sum of x*y - n*avg(x)*avg(y) / sum of x*x - n * avg(x)*avg(x)
+    intercept = avg(y) - slope * avg(x)
+
+  Two sets of data: (date, vin) and (trendline x, y)

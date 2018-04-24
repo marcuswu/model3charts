@@ -1,0 +1,211 @@
+
+<link rel="import" href="../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../bower_components/iron-ajax/iron-ajax.html">
+<link rel="import" href="../bower_components/paper-datatable-api/paper-datatable-api-column.html">
+<link rel="import" href="../bower_components/paper-datatable-api/paper-datatable-api.html">
+
+<dom-module id="reservation-table">
+    <template>
+        <iron-ajax auto
+            id="table_data"
+            url=""
+            handleAs="json"
+            method="GET"
+            on-response="gotTableData"
+            on-error="getTableDataError"></iron-ajax>
+        <paper-datatable-api id="data_table">
+            <paper-datatable-api-column header="Name" property="username">
+                <template>
+                    <span>{{value}}</span>
+                </template>
+            </paper-datatable-api-column>
+            <paper-datatable-api-column header="Location" property="location" filter="true" sortable="true">
+                <template>
+                    <span>{{value}}</span>
+                </template>
+            </paper-datatable-api-column>
+            <paper-datatable-api-column header="State / Province" property="state" filter="true" sortable="true">
+                <template>
+                    <span>{{value}}</span>
+                </template>
+            </paper-datatable-api-column>
+            <paper-datatable-api-column header="Country" property="country" filter="true" sortable="true">
+                <template>
+                    <span>{{value}}</span>
+                </template>
+            </paper-datatable-api-column>
+            <paper-datatable-api-column header="Owner" property="owner" filter="true" sortable="true" choices="[{&quot;key&quot;: &quot;true&quot;,&quot;label&quot;: &quot;Yes&quot;},{&quot;key&quot;: &quot;false&quot;,&quot;label&quot;: &quot;No&quot;}]">
+                <template>
+                    <span>{{value}}</span>
+                </template>
+            </paper-datatable-api-column>
+            <paper-datatable-api-column header="Reservation Date" property="date" filter="true" sortable="true">
+                <template>
+                    <span>{{value}}</span>
+                </template>
+            </paper-datatable-api-column>
+            <paper-datatable-api-column header="In-Store" property="inStore" filter="true" sortable="true" choices="[{&quot;key&quot;: &quot;true&quot;,&quot;label&quot;: &quot;Yes&quot;},{&quot;key&quot;: &quot;false&quot;,&quot;label&quot;: &quot;No&quot;}]">
+                <template>
+                    <span>{{value}}</span>
+                </template>
+            </paper-datatable-api-column>
+            <paper-datatable-api-column header="Invite Date" property="inviteDate" filter="true" sortable="true">
+                <template>
+                    <span>{{value}}</span>
+                </template>
+            </paper-datatable-api-column>
+            <paper-datatable-api-column header="Configuration Date" property="configurationDate" filter="true" sortable="true">
+                <template>
+                    <span>{{value}}</span>
+                </template>
+            </paper-datatable-api-column>
+            <paper-datatable-api-column header="Dirty VIN" property="vinDirty" filter="true" sortable="true">
+                <template>
+                    <span>{{value}}</span>
+                </template>
+            </paper-datatable-api-column>
+            <paper-datatable-api-column header="VIN" property="vin" filter="true" sortable="true">
+                <template>
+                    <span>{{value}}</span>
+                </template>
+            </paper-datatable-api-column>
+            <paper-datatable-api-column header="VIN Assignment Date" property="vinDate" filter="true" sortable="true">
+                <template>
+                    <span>{{value}}</span>
+                </template>
+            </paper-datatable-api-column>
+            <paper-datatable-api-column header="Delivery Date" property="deliveryDate" filter="true" sortable="true">
+                <template>
+                    <span>{{value}}</span>
+                </template>
+            </paper-datatable-api-column>
+            <paper-datatable-api-column header="Color" property="color" filter="true" sortable="true" choices="[{&quot;key&quot;: &quot;Deep Blue Metallic&quot;,&quot;label&quot;: &quot;Deep Blue Metallic&quot;},{&quot;key&quot;: &quot;Midnight Silver Metallic&quot;,&quot;label&quot;: &quot;Midnight Silver Metallic&quot;},{&quot;key&quot;: &quot;Pearl White Multi-Coat&quot;,&quot;label&quot;: &quot;Pearl White Multi-Coat&quot;},{&quot;key&quot;: &quot;Red Multi-Coat&quot;,&quot;label&quot;: &quot;Red Multi-Coat&quot;},{&quot;key&quot;: &quot;Silver Metallic&quot;,&quot;label&quot;: &quot;Silver Metallic&quot;},{&quot;key&quot;: &quot;Solid Black&quot;,&quot;label&quot;: &quot;Solid Black&quot;}]">
+                <template>
+                    <span>{{value}}</span>
+                </template>
+            </paper-datatable-api-column>
+            <paper-datatable-api-column header="Wheels" property="wheels" filter="true" sortable="true" choices="[{&quot;key&quot;: &quot;18 inch Aero&quot;,&quot;label&quot;: &quot;18 inch Aero&quot;},{&quot;key&quot;: &quot;19 inch Sport&quot;,&quot;label&quot;: &quot;19 inch Sport&quot;}]">
+                <template>
+                    <span>{{value}}</span>
+                </template>
+            </paper-datatable-api-column>
+            <paper-datatable-api-column header="Autopilot" property="autopilot" filter="true" sortable="true" choices="[{&quot;key&quot;: &quot;None&quot;,&quot;label&quot;: &quot;None&quot;},{&quot;key&quot;: &quot;Enhanced Autopilot&quot;,&quot;label&quot;: &quot;Enhanced Autopilot&quot;},{&quot;key&quot;: &quot;Full Self-Driving&quot;,&quot;label&quot;: &quot;Full Self-Driving&quot;}]">
+                <template>
+                    <span>{{value}}</span>
+                </template>
+            </paper-datatable-api-column>
+            <paper-datatable-api-column header="First Production Delivery Estimate" property="firstProductionDeliveryEstimate" filter="true" sortable="true">
+                <template>
+                    <span>{{value}}</span>
+                </template>
+            </paper-datatable-api-column>
+            <paper-datatable-api-column header="Short Range Delivery Estimate" property="shortRangeDeliveryEstimate" filter="true" sortable="true">
+                <template>
+                    <span>{{value}}</span>
+                </template>
+            </paper-datatable-api-column>
+            <paper-datatable-api-column header="AWD Delivery Estimate" property="awdDeliveryEstimate" filter="true" sortable="true">
+                <template>
+                    <span>{{value}}</span>
+                </template>
+            </paper-datatable-api-column>
+            <paper-datatable-api-column header="Powertrain" property="powertrain" filter="true" sortable="true" choices="[{&quot;key&quot;: &quot;RWD&quot;,&quot;label&quot;: &quot;RWD&quot;},{&quot;key&quot;: &quot;AWD&quot;,&quot;label&quot;: &quot;AWD&quot;},{&quot;key&quot;: &quot;Performance&quot;,&quot;label&quot;: &quot;Performance&quot;}]">
+                <template>
+                    <span>{{value}}</span>
+                </template>
+            </paper-datatable-api-column>
+            <paper-datatable-api-column header="Interior" property="interior" filter="true" sortable="true" choices="[{&quot;key&quot;: &quot;Black&quot;,&quot;label&quot;: &quot;Black&quot;},{&quot;key&quot;: &quot;White&quot;,&quot;label&quot;: &quot;White&quot;},{&quot;key&quot;: &quot;Cream&quot;,&quot;label&quot;: &quot;Cream&quot;}]">
+                <template>
+                    <span>{{value}}</span>
+                </template>
+            </paper-datatable-api-column>
+            <paper-datatable-api-column header="Trim" property="trim" filter="true" sortable="true" choices="[{&quot;key&quot;: &quot;PUP&quot;,&quot;label&quot;: &quot;Premium&quot;},{&quot;key&quot;: &quot;Standard&quot;,&quot;label&quot;: &quot;Standard&quot;}]">
+                <template>
+                    <span>{{value}}</span>
+                </template>
+            </paper-datatable-api-column>
+            <paper-datatable-api-column header="Battery" property="battery" filter="true" sortable="true" choices="[{&quot;key&quot;: &quot;LR&quot;,&quot;label&quot;: &quot;Long Range&quot;},{&quot;key&quot;: &quot;SR&quot;,&quot;label&quot;: &quot;Short Range&quot;}]">
+                <template>
+                    <span>{{value}}</span>
+                </template>
+            </paper-datatable-api-column>
+            <paper-datatable-api-column header="Comments" property="comments">
+                <template>
+                    <span>{{value}}</span>
+                </template>
+            </paper-datatable-api-column>
+            <paper-datatable-api-column header="Last Update" property="lastUpdate" filter="true" sortable="true">
+                <template>
+                    <span>{{value}}</span>
+                </template>
+            </paper-datatable-api-column>
+            <paper-datatable-api-column header="Calculated Delivery Date" property="calculatedDeliveryDate" filter="true" sortable="true">
+                <template>
+                    <span>{{value}}</span>
+                </template>
+            </paper-datatable-api-column>
+            <paper-datatable-api-column header="Status" property="status" filter="true" sortable="true" choices="[{&quot;key&quot;: &quot;Not yet invited&quot;,&quot;label&quot;: &quot;Not Yet Invited&quot;},{&quot;key&quot;: &quot;Configured&quot;,&quot;label&quot;: &quot;Configured&quot;},{&quot;key&quot;: &quot;VIN received&quot;,&quot;label&quot;: &quot;VIN Received&quot;},{&quot;key&quot;: &quot;Del scheduled&quot;,&quot;label&quot;: &quot;Delivery Scheduled&quot;},{&quot;key&quot;: &quot;Delivered&quot;,&quot;label&quot;: &quot;Delivered&quot;},{&quot;key&quot;: &quot;Deferring&quot;,&quot;label&quot;: &quot;Deferring&quot;}]">
+                <template>
+                    <span>{{value}}</span>
+                </template>
+            </paper-datatable-api-column>
+            <paper-datatable-api-column header="Configuration To Delivery" property="configurationToDelivery" filter="true" sortable="true">
+                <template>
+                    <span>{{value}}</span>
+                </template>
+            </paper-datatable-api-column>
+            <paper-datatable-api-column header="Configuration To VIN" property="configurationToVin" filter="true" sortable="true">
+                <template>
+                    <span>{{value}}</span>
+                </template>
+            </paper-datatable-api-column>
+            <paper-datatable-api-column header="VIN To Delivery" property="vinToDelivery" filter="true" sortable="true">
+                <template>
+                    <span>{{value}}</span>
+                </template>
+            </paper-datatable-api-column>
+        </paper-datatable-api>
+    </template>
+
+    <script>
+    class ReservationTable extends Polymer.Element {
+        static get is() {
+            return "reservation-table";
+        }
+        static get properties() {
+            return {
+                tableData: {
+                    type: Array,
+                    notify: true
+                },
+                table: {
+                    type: Object
+                }
+            };
+        }
+        constructor() {
+            super();
+        }
+        ready() {
+            super.ready();
+            this.$.table_data.url = rootServiceUrl + "/reservations";
+        }
+        chartRefresh() {
+            //this.$.refresh_error.hide();
+            this.$.table_data.generateRequest();
+        }
+        gotTableData(evt, request) {
+            this.tableData = request.response;
+            // set up trend line
+            //this.$.vin_chart_canvas.width = document.body.clientWidth;
+            //this.$.vin_chart_canvas.height = document.body.clientHeight;
+            console.log("updating table");
+            this.$.data_table.data = this.tableData;
+        }
+        getTableDataError(request, error) {
+            //this.$.refresh_error.show();
+        }
+    }
+    customElements.define(ReservationTable.is, ReservationTable);
+    </script>
+</dom-module>

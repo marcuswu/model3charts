@@ -1,0 +1,151 @@
+/*jslint node: true */
+'use strict';
+
+var db = require('../../util/db');
+
+var vinWaitData = {
+    paths: ['/vinWaitData'],
+    requestHandler: function(req, res, next) {
+        var startDate = req.query.start;
+        var endDate = req.query.end;
+        var country = req.query.country;
+        var reservationCollection = db.get('reservation');
+
+        const convertColor = function(color) {
+            switch (color) {
+                case "Deep Blue Metallic":
+                return "blue";
+                case "Midnight Silver Metallic":
+                return "darkSilver";
+                case "Pearl White Multi-Coat":
+                return "white";
+                case "Red Multi-Coat":
+                return "red";
+                case "Silver Metallic":
+                return "silver";
+                case "Solid Black":
+                return "black";
+                default:
+                return null;
+            }
+        }
+        const getColor = function(count, total) {
+            if (total == 0) {
+                return 'rgb(255, 255, 255);';
+            }
+            const percent = count / total;
+            const minColor = [255, 0, 0];
+            const maxColor = [0, 255, 0];
+            const colorParts = [0, 1, 2].map( (i) => Math.round(((maxColor[i] - minColor[i]) * percent) + minColor[i] ));
+            return 'rgb(' + colorParts.join(', ') + ');';
+        };
+
+        const groupReservations = function(reservations) {
+            var grouped = {
+                "aero": {
+                    "blue": { "vins": 0, "total": 0, "color": "#fff;" },
+                    "darkSilver": { "vins": 0, "total": 0, "color": "#fff;" },
+                    "white": { "vins": 0, "total": 0, "color": "#fff;" },
+                    "red": { "vins": 0, "total": 0, "color": "#fff;" },
+                    "silver": { "vins": 0, "total": 0, "color": "#fff;" },
+                    "black": { "vins": 0, "total": 0, "color": "#fff;" }
+                },
+                "sport": {
+                    "blue": { "vins": 0, "total": 0, "color": "#fff;" },
+                    "darkSilver": { "vins": 0, "total": 0, "color": "#fff;" },
+                    "white": { "vins": 0, "total": 0, "color": "#fff;" },
+                    "red": { "vins": 0, "total": 0, "color": "#fff;" },
+                    "silver": { "vins": 0, "total": 0, "color": "#fff;" },
+                    "black": { "vins": 0, "total": 0, "color": "#fff;" }
+                }
+            };
+            // count reservations with and without vin for each color / wheel type
+            reservations.forEach(function(reservation) {
+                if (!reservation['color'] || !reservation['wheels']) {
+                    return;
+                }
+                const wheel = reservation['wheels'].endsWith('Aero') ? 'aero' : 'sport';
+                const color = convertColor(reservation['color']);
+                if (reservation['vin'] || reservation['vinDate'] || reservation['deliveryDate']) {
+                    grouped[wheel][color].vins += 1;
+                }
+                grouped[wheel][color].total += 1;
+            });
+            Object.keys(grouped).forEach(w => Object.keys(grouped[w]).forEach(c => grouped[w][c].color = getColor(grouped[w][c].vins, grouped[w][c].total)));
+            return grouped;
+        }
+        // Retrieve list of unique configuration dates
+        // Find reservations with each configuration date -- count those with and without vins
+        var findQuery = {configurationDate: {$ne: null }};
+        if (startDate) {
+            findQuery.configurationDate.$gte = new Date(startDate);
+        }
+        if (endDate) {
+            findQuery.configurationDate.$lte = new Date(endDate);
+        }
+        reservationCollection.distinct('configurationDate', findQuery).then( function(dates) {
+            var dateJobs = [];
+            var totals = {
+                "aero": {
+                    "blue": { "vins": 0, "total": 0, "color": "#fff;" },
+                    "darkSilver": { "vins": 0, "total": 0, "color": "#fff;" },
+                    "white": { "vins": 0, "total": 0, "color": "#fff;" },
+                    "red": { "vins": 0, "total": 0, "color": "#fff;" },
+                    "silver": { "vins": 0, "total": 0, "color": "#fff;" },
+                    "black": { "vins": 0, "total": 0, "color": "#fff;" },
+                    "date": "Total"
+                },
+                "sport": {
+                    "blue": { "vins": 0, "total": 0, "color": "#fff;" },
+                    "darkSilver": { "vins": 0, "total": 0, "color": "#fff;" },
+                    "white": { "vins": 0, "total": 0, "color": "#fff;" },
+                    "red": { "vins": 0, "total": 0, "color": "#fff;" },
+                    "silver": { "vins": 0, "total": 0, "color": "#fff;" },
+                    "black": { "vins": 0, "total": 0, "color": "#fff;" },
+                    "date": "Total"
+                }
+            };
+            var addToTotals = function(group) {
+                var doColorTotal = function(total, color) {
+                    total.vins += color.vins;
+                    total.total += color.total;
+                    total.color = getColor(total.vins, total.total);
+                }
+                doColorTotal(totals.aero.blue, group.aero.blue);
+                doColorTotal(totals.aero.darkSilver, group.aero.darkSilver);
+                doColorTotal(totals.aero.white, group.aero.white);
+                doColorTotal(totals.aero.red, group.aero.red);
+                doColorTotal(totals.aero.silver, group.aero.silver);
+                doColorTotal(totals.aero.black, group.aero.black);
+
+                doColorTotal(totals.sport.blue, group.sport.blue);
+                doColorTotal(totals.sport.darkSilver, group.sport.darkSilver);
+                doColorTotal(totals.sport.white, group.sport.white);
+                doColorTotal(totals.sport.red, group.sport.red);
+                doColorTotal(totals.sport.silver, group.sport.silver);
+                doColorTotal(totals.sport.black, group.sport.black);
+            };
+            dates.forEach(function(date) {
+                var findQuery = { configurationDate: date };
+                if (country) {
+                    findQuery.country = country;
+                }
+                dateJobs.push(reservationCollection.find(findQuery).then(function(reservations) {
+                    var grouped = groupReservations(reservations);
+                    const options = {year: 'numeric', month: 'short', day: 'numeric' };
+                    grouped.aero.date = date.toLocaleDateString('en-US', options);
+                    grouped.sport.date = date.toLocaleDateString('en-US', options);
+                    addToTotals(grouped);
+                    return grouped;
+                }));
+            });
+            Promise.all(dateJobs).then(function(results) {
+                results.sort((ga, gb) => new Date(gb.aero.date) - new Date(ga.aero.date));
+                results.unshift(totals);
+                res.send(results);
+            });
+        });
+    }
+};
+
+module.exports = vinWaitData;

@@ -1,0 +1,73 @@
+<link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="../iron-selector/iron-selectable.html">
+<link rel="import" href="../iron-scroll-target-behavior/iron-scroll-target-behavior.html">
+
+<template id="iron-page-scroll">
+  <style>
+    :host {
+      display: block;
+    }
+  </style>
+</template>
+<script>
+  Polymer({
+    is: 'iron-page-scroll',
+
+    behaviors: [
+      Polymer.IronSelectableBehavior,      
+      Polymer.IronScrollTargetBehavior
+    ],
+
+    properties: {
+      settings: { // scroll settings
+        type: Object,
+        value: { behavior: "smooth", block: "start", inline: "nearest" }
+      },
+      offset: { // offset for when to switch selection on scroll - 10 default = 10px from top of new section
+        type: Number,
+        value: 10
+      },
+      activateEvent: { // disables switching of selected when a page section is clicked
+        type: String,
+        value: ""
+      },
+      _oldSelected: String
+    },
+
+    observers: [
+      '_selectedPageChanged(selected)'
+    ],
+
+    _selectedPageChanged: function(selected) {
+      if ((!selected && !Number.isFinite(selected)) || this._oldSelected === this.selected) { return; }
+      else {
+        var selectedPage;
+        if (this.children[selected]) {
+          selectedPage = this.children[selected];
+        }
+        else if (Array.isArray(this.children)) {
+          selectedPage = this.children.find(function(child) {
+            return child.attributes[this.attrForSelected].value === selected;
+          });
+        }
+        if (selectedPage) {
+          selectedPage.scrollIntoView(this.settings);
+        }
+      }
+    },
+
+    _scrollHandler: function() {
+      var nextSelection;
+      this._oldScrollTop = this._scrollTop;
+      for (var i = 0; i < this.children.length; i++) {
+        if (this._scrollTop >= this.children[i].offsetTop - this.offset) {
+          nextSelection = (this.attrForSelected) ? this.children[i].attributes[this.attrForSelected].value : i;
+        }
+      }      
+      if (nextSelection || Number.isFinite(nextSelection)) {
+        this._oldSelected = nextSelection;
+        this.select(nextSelection);
+      }
+    }
+  });
+</script>
