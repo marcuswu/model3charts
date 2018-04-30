@@ -24,11 +24,16 @@
             display: block;
         }
         #vin_wait_table {
-            width: 100%;
-            height: 100%;
+            min-width: 100%;
+            min-height: 100%;
             font-size: 12pt;
             color: #000;
             border-collapse: collapse;
+        }
+        @media only screen and (max-width: 830px) {
+            #vin_wait_table {
+                font-size: 10pt;
+            }
         }
         #vin_wait_table th {
             width: 14.29%;
@@ -48,21 +53,6 @@
             on-response="gotVinWaitData"
             on-error="getVinWaitDataError"></iron-ajax>
         <h1>VINS Assigned / Cars Configured by Date and Configuration</h1>
-        <date-picker id="start_date" label="Start Date" placeholder="Optional Start Date" on-value-changed="startDateChanged"></date-picker>
-        <date-picker id="end_date" label="End Date" placeholder="Optional End Date" on-value-changed="endDateChanged"></date-picker>
-        <paper-dropdown-menu-light id="country" label="Country" on-iron-select="countrySelect">
-            <paper-listbox id="country_items_list" slot="dropdown-content" class="dropdown-content">
-                <template is="dom-repeat" id="country_items">
-                    <paper-item>{{item}}</paper-item>
-                </template>
-            </paper-listbox>
-        </paper-dropdown-menu-light>
-        <paper-dropdown-menu-light id="wheels" label="Wheels" on-iron-select="wheelsSelect">
-            <paper-listbox slot="dropdown-content" class="dropdown-content" selected="0">
-                <paper-item>Aero Wheels</paper-item>
-                <paper-item>Sport Wheels</paper-item>
-            </paper-listbox>
-        </paper-dropdown-menu-light>
         <table id="vin_wait_table">
             <tr>
                 <th>Configuration Date</th>
@@ -98,51 +88,62 @@
                     type: Object,
                     notify: true
                 },
+                wheels: {
+                    type: String,
+                    notify: true
+                },
+                country: {
+                    type: String,
+                    notify: true
+                },
+                start: {
+                    type: Date,
+                    notify: true
+                },
+                end: {
+                    type: Date,
+                    notify: true
+                }
             };
         }
         constructor() {
             super();
-            this.currentTab = 0;
         }
         ready() {
             super.ready();
-            this.$.country_items.items = ['Canada', 'USA'];
-            this.$.country_items_list.selected = 1;
-            this.$.vin_wait_data.url = rootServiceUrl + "/vinWaitData";
+            this.addEventListener('wheels-changed', this.chartRefresh);
+            this.addEventListener('country-changed', this.chartRefresh);
+            this.addEventListener('start-changed', this.chartRefresh);
+            this.addEventListener('end-changed', this.chartRefresh);
+            // this.chartRefresh();
         }
         chartRefresh() {
             // Build params, set them -- automatically sends request
             var params = {};
-            if (this.$.country.value) {
-                params.country = this.$.country.selectedItem.textContent;
+            if (this.wheels) {
+                params.wheels = this.wheels;
             }
-            if (this.$.start_date.value) {
-                params.start = this.$.start_date.date;
+            if (this.country) {
+                params.country = this.country;
             }
-            if (this.$.end_date.value) {
-                params.end = this.$.end_date.date;
+            if (this.start) {
+                params.start = this.start;
+            }
+            if (this.end) {
+                params.end = this.end;
             }
             this.$.vin_wait_data.params = params;
+            this.$.vin_wait_data.url = rootServiceUrl + "/vinWaitData";
         }
         wheelsSelect() {
             if (!this.waitData) {
                 return;
             }
-            const selected = this.$.wheels.value.startsWith("Aero") ? "aero" : "sport";
-            this.$.table_items.items = this.waitData.map(x => x[selected]);
-        }
-        countrySelect() {
-            this.chartRefresh();
-        }
-        startDateChanged() {
-            this.chartRefresh();
-        }
-        endDateChanged() {
-            this.chartRefresh();
+            this.$.table_items.items = this.waitData;
         }
         gotVinWaitData(evt, request) {
             this.waitData = request.response;
-            this.$.table_items.items = this.waitData.map(x => x[this.currentTab == 0 ? "aero" : "sport"]);
+            this.$.table_items.items = this.waitData;
         }
         getVinWaitDataError(request, error) {
             //this.$.refresh_error.show();

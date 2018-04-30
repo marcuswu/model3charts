@@ -1,13 +1,14 @@
 <link rel="import" href="../bower_components/polymer/polymer-element.html">
 <link rel="import" href="../bower_components/iron-ajax/iron-ajax.html">
 <link rel="import" href="../bower_components/google-chart/google-chart.html">
+<link rel="import" href="../bower_components/iron-resizable-behavior/iron-resizable-behavior.html">
 
 <dom-module id="vin-chart">
     <template>
         <style>
         google-chart {
           min-height: 600px;
-          width: 100%;
+          min-width: 100%;
         }
         </style>
         <iron-ajax auto
@@ -26,7 +27,7 @@
     </template>
 
     <script>
-    class VinChart extends Polymer.Element {
+    class VinChart extends Polymer.mixinBehaviors([Polymer.IronResizableBehavior], Polymer.Element) {
         static get is() {
             return "vin-chart";
         }
@@ -38,6 +39,22 @@
                 },
                 chart: {
                     type: Object
+                },
+                wheels: {
+                    type: String,
+                    notify: true
+                },
+                country: {
+                    type: String,
+                    notify: true
+                },
+                start: {
+                    type: Date,
+                    notify: true
+                },
+                end: {
+                    type: Date,
+                    notify: true
                 }
             };
         }
@@ -46,21 +63,44 @@
         }
         ready() {
             super.ready();
-            this.$.chart_data.url = rootServiceUrl + "/vinChartData";
+            this.addEventListener('iron-resize', this._resizeChart);
+            this.addEventListener('wheels-changed', this.chartRefresh);
+            this.addEventListener('country-changed', this.chartRefresh);
+            this.addEventListener('start-changed', this.chartRefresh);
+            this.addEventListener('end-changed', this.chartRefresh);
+            //this.chartRefresh();
+        }
+        _resizeChart() {
+            this.$.vin_chart.redraw();
         }
         chartRefresh() {
-            this.$.chart_data.generateRequest();
+            var params = {};
+            if (this.wheels) {
+                params.wheels = this.wheels;
+            }
+            if (this.country) {
+                params.country = this.country;
+            }
+            if (this.start) {
+                params.start = this.start;
+            }
+            if (this.end) {
+                params.end = this.end;
+            }
+            this.$.chart_data.params = params;
+            this.$.chart_data.url = rootServiceUrl + "/vinChartData";
         }
         gotChartData(evt, request) {
             this.chartData = request.response;
+            if (!this.chartData) {
+                return;
+            }
             var formatDate = x => new Date(x).toLocaleDateString("en-US", { month: 'short', day: 'numeric', year: 'numeric' });
-            var vinData = this.chartData.vinData.map( x => [new Date(x.x), parseInt(x.y), null] );
+            var vinData = this.chartData.vinData.map( x => [new Date(x.x), parseInt(x.y), null] ).sort((a, b) => a[0] - b[0]);
             this.chartData.trendData.forEach(function(trendPoint) {
                 var trendDate = new Date(trendPoint.x);
-                var vinIndex = vinData.reduce( function(acc, val, index, arr) {
-                    return val[0].getTime() == trendDate.getTime() ? index : acc;
-                }, 0);
-                if (vinData[vinIndex][0].getTime() != trendDate.getTime()) {
+                var vinIndex = vinData.findIndex(x => x[0].getTime() == trendDate.getTime());
+                if (vinIndex < 0) {
                     // Couldn't find it (no VINs assigned that day), so find the nearest and insert
                     var insertAt = vinData.findIndex( (val, index, arr) => val[0].getTime() > trendDate.getTime());
                     vinData.splice(insertAt, 0, [trendDate, null, trendPoint.y]);

@@ -9,6 +9,7 @@ var vinWaitData = {
         var startDate = req.query.start;
         var endDate = req.query.end;
         var country = req.query.country;
+        var wheels = req.query.wheels;
         var reservationCollection = db.get('reservation');
 
         const convertColor = function(color) {
@@ -42,36 +43,25 @@ var vinWaitData = {
 
         const groupReservations = function(reservations) {
             var grouped = {
-                "aero": {
-                    "blue": { "vins": 0, "total": 0, "color": "#fff;" },
-                    "darkSilver": { "vins": 0, "total": 0, "color": "#fff;" },
-                    "white": { "vins": 0, "total": 0, "color": "#fff;" },
-                    "red": { "vins": 0, "total": 0, "color": "#fff;" },
-                    "silver": { "vins": 0, "total": 0, "color": "#fff;" },
-                    "black": { "vins": 0, "total": 0, "color": "#fff;" }
-                },
-                "sport": {
-                    "blue": { "vins": 0, "total": 0, "color": "#fff;" },
-                    "darkSilver": { "vins": 0, "total": 0, "color": "#fff;" },
-                    "white": { "vins": 0, "total": 0, "color": "#fff;" },
-                    "red": { "vins": 0, "total": 0, "color": "#fff;" },
-                    "silver": { "vins": 0, "total": 0, "color": "#fff;" },
-                    "black": { "vins": 0, "total": 0, "color": "#fff;" }
-                }
+                "blue": { "vins": 0, "total": 0, "color": "#fff;" },
+                "darkSilver": { "vins": 0, "total": 0, "color": "#fff;" },
+                "white": { "vins": 0, "total": 0, "color": "#fff;" },
+                "red": { "vins": 0, "total": 0, "color": "#fff;" },
+                "silver": { "vins": 0, "total": 0, "color": "#fff;" },
+                "black": { "vins": 0, "total": 0, "color": "#fff;" }
             };
             // count reservations with and without vin for each color / wheel type
             reservations.forEach(function(reservation) {
                 if (!reservation['color'] || !reservation['wheels']) {
                     return;
                 }
-                const wheel = reservation['wheels'].endsWith('Aero') ? 'aero' : 'sport';
                 const color = convertColor(reservation['color']);
                 if (reservation['vin'] || reservation['vinDate'] || reservation['deliveryDate']) {
-                    grouped[wheel][color].vins += 1;
+                    grouped[color].vins += 1;
                 }
-                grouped[wheel][color].total += 1;
+                grouped[color].total += 1;
             });
-            Object.keys(grouped).forEach(w => Object.keys(grouped[w]).forEach(c => grouped[w][c].color = getColor(grouped[w][c].vins, grouped[w][c].total)));
+            Object.keys(grouped).forEach(c => grouped[c].color = getColor(grouped[c].vins, grouped[c].total));
             return grouped;
         }
         // Retrieve list of unique configuration dates
@@ -86,24 +76,13 @@ var vinWaitData = {
         reservationCollection.distinct('configurationDate', findQuery).then( function(dates) {
             var dateJobs = [];
             var totals = {
-                "aero": {
-                    "blue": { "vins": 0, "total": 0, "color": "#fff;" },
-                    "darkSilver": { "vins": 0, "total": 0, "color": "#fff;" },
-                    "white": { "vins": 0, "total": 0, "color": "#fff;" },
-                    "red": { "vins": 0, "total": 0, "color": "#fff;" },
-                    "silver": { "vins": 0, "total": 0, "color": "#fff;" },
-                    "black": { "vins": 0, "total": 0, "color": "#fff;" },
-                    "date": "Total"
-                },
-                "sport": {
-                    "blue": { "vins": 0, "total": 0, "color": "#fff;" },
-                    "darkSilver": { "vins": 0, "total": 0, "color": "#fff;" },
-                    "white": { "vins": 0, "total": 0, "color": "#fff;" },
-                    "red": { "vins": 0, "total": 0, "color": "#fff;" },
-                    "silver": { "vins": 0, "total": 0, "color": "#fff;" },
-                    "black": { "vins": 0, "total": 0, "color": "#fff;" },
-                    "date": "Total"
-                }
+                "blue": { "vins": 0, "total": 0, "color": "#fff;" },
+                "darkSilver": { "vins": 0, "total": 0, "color": "#fff;" },
+                "white": { "vins": 0, "total": 0, "color": "#fff;" },
+                "red": { "vins": 0, "total": 0, "color": "#fff;" },
+                "silver": { "vins": 0, "total": 0, "color": "#fff;" },
+                "black": { "vins": 0, "total": 0, "color": "#fff;" },
+                "date": "Total"
             };
             var addToTotals = function(group) {
                 var doColorTotal = function(total, color) {
@@ -111,36 +90,31 @@ var vinWaitData = {
                     total.total += color.total;
                     total.color = getColor(total.vins, total.total);
                 }
-                doColorTotal(totals.aero.blue, group.aero.blue);
-                doColorTotal(totals.aero.darkSilver, group.aero.darkSilver);
-                doColorTotal(totals.aero.white, group.aero.white);
-                doColorTotal(totals.aero.red, group.aero.red);
-                doColorTotal(totals.aero.silver, group.aero.silver);
-                doColorTotal(totals.aero.black, group.aero.black);
-
-                doColorTotal(totals.sport.blue, group.sport.blue);
-                doColorTotal(totals.sport.darkSilver, group.sport.darkSilver);
-                doColorTotal(totals.sport.white, group.sport.white);
-                doColorTotal(totals.sport.red, group.sport.red);
-                doColorTotal(totals.sport.silver, group.sport.silver);
-                doColorTotal(totals.sport.black, group.sport.black);
+                doColorTotal(totals.blue, group.blue);
+                doColorTotal(totals.darkSilver, group.darkSilver);
+                doColorTotal(totals.white, group.white);
+                doColorTotal(totals.red, group.red);
+                doColorTotal(totals.silver, group.silver);
+                doColorTotal(totals.black, group.black);
             };
             dates.forEach(function(date) {
                 var findQuery = { configurationDate: date };
                 if (country) {
                     findQuery.country = country;
                 }
+                if (wheels) {
+                    findQuery.wheels = wheels == 'aero' ? "18 inch Aero" : "19 inch Sport";
+                }
                 dateJobs.push(reservationCollection.find(findQuery).then(function(reservations) {
                     var grouped = groupReservations(reservations);
                     const options = {year: 'numeric', month: 'short', day: 'numeric' };
-                    grouped.aero.date = date.toLocaleDateString('en-US', options);
-                    grouped.sport.date = date.toLocaleDateString('en-US', options);
+                    grouped.date = date.toLocaleDateString('en-US', options);
                     addToTotals(grouped);
                     return grouped;
                 }));
             });
             Promise.all(dateJobs).then(function(results) {
-                results.sort((ga, gb) => new Date(gb.aero.date) - new Date(ga.aero.date));
+                results.sort((ga, gb) => new Date(gb.date) - new Date(ga.date));
                 results.unshift(totals);
                 res.send(results);
             });

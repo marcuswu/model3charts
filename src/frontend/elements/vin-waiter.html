@@ -1,13 +1,14 @@
 <link rel="import" href="../bower_components/polymer/polymer-element.html">
 <link rel="import" href="../bower_components/iron-ajax/iron-ajax.html">
 <link rel="import" href="../bower_components/google-chart/google-chart.html">
+<link rel="import" href="../bower_components/iron-resizable-behavior/iron-resizable-behavior.html">
 
 <dom-module id="vin-waiters">
     <template>
         <style>
         google-chart {
           min-height: 600px;
-          width: 100%;
+          min-width: 100%;
         }
         </style>
         <iron-ajax auto
@@ -19,21 +20,6 @@
             on-error="getWaiterDataError"></iron-ajax>
         <h1>Current VIN Waits by Color</h1>
         <p>I recommend putting a minimum date on this one since some entries are stale (never updated with VIN data)</p>
-        <date-picker id="start_date" label="Start Date" placeholder="Optional Start Date" on-value-changed="startDateChanged"></date-picker>
-        <date-picker id="end_date" label="End Date" placeholder="Optional End Date" on-value-changed="endDateChanged"></date-picker>
-        <paper-dropdown-menu-light id="country" label="Country" on-iron-select="countrySelect">
-            <paper-listbox id="country_items_list" slot="dropdown-content" class="dropdown-content">
-                <template is="dom-repeat" id="country_items">
-                    <paper-item>{{item}}</paper-item>
-                </template>
-            </paper-listbox>
-        </paper-dropdown-menu-light>
-        <paper-dropdown-menu-light id="wheels" label="Wheels" on-iron-select="wheelsSelect">
-            <paper-listbox slot="dropdown-content" class="dropdown-content" selected="0">
-                <paper-item value="aero">Aero Wheels</paper-item>
-                <paper-item value="sport">Sport Wheels</paper-item>
-            </paper-listbox>
-        </paper-dropdown-menu-light>
         <google-chart
             id="vin_waiter_chart"
             type='column'>
@@ -41,7 +27,7 @@
     </template>
 
     <script>
-    class VinWaiters extends Polymer.Element {
+    class VinWaiters extends Polymer.mixinBehaviors([Polymer.IronResizableBehavior], Polymer.Element) {
         static get is() {
             return "vin-waiters";
         }
@@ -53,6 +39,22 @@
                 },
                 chart: {
                     type: Object
+                },
+                wheels: {
+                    type: String,
+                    notify: true
+                },
+                country: {
+                    type: String,
+                    notify: true
+                },
+                start: {
+                    type: Date,
+                    notify: true
+                },
+                end: {
+                    type: Date,
+                    notify: true
                 }
             };
         }
@@ -61,38 +63,33 @@
         }
         ready() {
             super.ready();
-            this.$.country_items.items = ['Canada', 'USA'];
-            this.$.country_items_list.selected = 1;
-            this.$.vin_waiter_data.url = rootServiceUrl + "/vinWaiterData";
+            this.addEventListener('iron-resize', this._resizeChart);
+            this.addEventListener('wheels-changed', this.chartRefresh);
+            this.addEventListener('country-changed', this.chartRefresh);
+            this.addEventListener('start-changed', this.chartRefresh);
+            this.addEventListener('end-changed', this.chartRefresh);
+            // this.chartRefresh();
+        }
+        _resizeChart() {
+            this.$.vin_waiter_chart.redraw();
         }
         chartRefresh() {
             // Build params, set them -- automatically sends request
             var params = {};
-            if (this.$.wheels.value) {
-                params.wheels = this.$.wheels.selectedItem.getAttribute('value');
+            if (this.wheels) {
+                params.wheels = this.wheels;
             }
-            if (this.$.country.value) {
-                params.country = this.$.country.selectedItem.textContent;
+            if (this.country) {
+                params.country = this.country;
             }
-            if (this.$.start_date.value) {
-                params.start = this.$.start_date.date;
+            if (this.start) {
+                params.start = this.start;
             }
-            if (this.$.end_date.value) {
-                params.end = this.$.end_date.date;
+            if (this.end) {
+                params.end = this.end;
             }
             this.$.vin_waiter_data.params = params;
-        }
-        wheelsSelect() {
-            this.chartRefresh();
-        }
-        countrySelect() {
-            this.chartRefresh();
-        }
-        startDateChanged() {
-            this.chartRefresh();
-        }
-        endDateChanged() {
-            this.chartRefresh();
+            this.$.vin_waiter_data.url = rootServiceUrl + "/vinWaiterData";
         }
         gotWaiterData(evt, request) {
             this.chartData = request.response;

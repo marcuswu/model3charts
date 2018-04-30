@@ -1,0 +1,135 @@
+
+<dom-module id="filter-element">
+    <template>
+        <app-location id="location" route="{{route}}"></app-location>
+        <date-picker id="start_date" label="Start Date" placeholder="Optional Start Date" on-confirmed-date-changed="startDateChanged"></date-picker>
+        <date-picker id="end_date" label="End Date" placeholder="Optional End Date" on-confirmed-date-changed="endDateChanged"></date-picker>
+        <paper-dropdown-menu-light id="country" label="Country" on-iron-select="countrySelect">
+            <paper-listbox id="country_items_list" slot="dropdown-content" class="dropdown-content">
+                <template is="dom-repeat" id="country_items">
+                    <paper-item>{{item}}</paper-item>
+                </template>
+            </paper-listbox>
+        </paper-dropdown-menu-light>
+        <paper-dropdown-menu-light id="wheels" label="Wheels" on-iron-select="wheelsSelect">
+            <paper-listbox id="wheels_list" slot="dropdown-content" class="dropdown-content" selected="0">
+                <template is="dom-repeat" id="wheel_items">
+                    <paper-item value="{{item.value}}">{{item.label}}</paper-item>
+                </template>
+            </paper-listbox>
+        </paper-dropdown-menu-light>
+        <paper-button on-click="refresh"><iron-icon icon="refresh"></iron-icon></paper-button>
+    </template>
+    <script>
+    class FilterElement extends Polymer.Element {
+        static get is() {
+            return "filter-element";
+        }
+        static get properties() {
+            return {
+                "route": {
+                    type: Object,
+                    notify: true
+                },
+                "params": {
+                    type: Object,
+                    notify: true
+                },
+                "dataLoaded": {
+                    type: Boolean,
+                    notify: true
+                }
+            };
+        }
+        constructor() {
+            super();
+        }
+        ready() {
+            super.ready();
+            this.$.country_items.items = ['Any Country', 'Canada', 'USA'];
+            this.$.wheel_items.items = [
+                {"value": "none", "label": "Any Wheels"},
+                {"value": "aero", "label": "Aero Wheels"},
+                {"value": "sport", "label": "Sport Wheels"}
+            ];
+            Polymer.RenderStatus.afterNextRender(this, function() {
+                this.dataLoaded = false;
+                this.loadParams();
+                this.dataLoaded = true;
+                this.urlRefresh();
+            });
+        }
+        loadParams() {
+            var params = this.$.location.queryParams;
+            if (params.wheels) {
+                this.$.wheels_list.selected = this.$.wheel_items.items.findIndex(x => x.value == params.wheels);
+            } else {
+                this.$.wheels_list.selected = 0;
+            }
+            if (params.country) {
+                this.$.country_items_list.selected = this.$.country_items.items.findIndex(x => x == params.country);
+            } else {
+                this.$.country_items_list.selected = 0;
+            }
+            if (params.start) {
+                this.$.start_date.confirmedDate = params.start;
+                var d = new Date(params.start);
+                this.$.start_date.confirmedValue = d.getTime() + (d.getTimezoneOffset() * 60 * 1000);
+            }
+            if (params.end) {
+                this.$.end_date.confirmedDate = params.end;
+                var d = new Date(params.end);
+                this.$.end_date.confirmedValue = d.getTime() + (d.getTimezoneOffset() * 60 * 1000);
+            }
+        }
+        urlRefresh() {
+            // Build url params, set the location
+            if (!this.dataLoaded) {
+                return;
+            }
+            var params = {};
+            var url = '/';
+            var delimeter = '?';
+            if (this.$.wheels.value && this.$.wheels.selectedItem.value != 'none') {
+                params.wheels = this.$.wheels.selectedItem.value;
+                url = url + delimeter + "wheels=" + params.wheels;
+                delimeter = '&';
+            }
+            if (this.$.country.value && this.$.country.value != 'Any Country') {
+                params.country = this.$.country.selectedItem.textContent;
+                url = url + delimeter + "country=" + params.country;
+                delimeter = '&';
+            }
+            if (this.$.start_date.confirmedValue) {
+                params.start = this.$.start_date.confirmedDate;
+                url = url + delimeter + "start=" + params.start;
+                delimeter = '&';
+            }
+            if (this.$.end_date.confirmedValue) {
+                params.end = this.$.end_date.confirmedDate;
+                url = url + delimeter + "end=" + params.end;
+            }
+            this.params = params;
+            window.history.pushState({}, null, url);
+            window.dispatchEvent(new CustomEvent('location-changed'));
+            this.dispatchEvent(new CustomEvent('change', { detail: this.params }));
+        }
+        wheelsSelect() {
+            this.urlRefresh();
+        }
+        countrySelect() {
+            this.urlRefresh();
+        }
+        startDateChanged() {
+            this.urlRefresh();
+        }
+        endDateChanged() {
+            this.urlRefresh();
+        }
+        refresh() {
+            this.dispatchEvent(new CustomEvent('refresh', { detail: this.params }));
+        }
+    }
+    customElements.define(FilterElement.is, FilterElement);
+    </script>
+</dom-module>

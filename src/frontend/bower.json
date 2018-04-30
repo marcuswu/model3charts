@@ -27,6 +27,8 @@
     "paper-card": "PolymerElements/paper-card#^2.1.0",
     "paper-tabs": "PolymerElements/paper-tabs#^2.1.1",
     "paper-dropdown-menu": "PolymerElements/paper-dropdown-menu#^2.1.0",
-    "datetime-picker": "fooloomanzoo/datetime-picker#^2.9.0"
+    "datetime-picker": "fooloomanzoo/datetime-picker#^2.9.0",
+    "iron-resizable-behavior": "PolymerElements/iron-resizable-behavior#^2.1.0",
+    "app-route": "PolymerElements/app-route#^2.1.0"
   }
 }

@@ -28,6 +28,8 @@
         <link rel="import" href="bower_components/paper-card/paper-card.html">
         <link rel="import" href="bower_components/iron-selector/iron-selector.html">
         <link rel="import" href="bower_components/iron-page-scroll/iron-page-scroll.html">
+        <link rel="import" href="bower_components/app-route/app-location.html">
+        <link rel="import" href="elements/filter-elements.html">
         <link rel="import" href="elements/vin-chart.html">
         <link rel="import" href="elements/vin-color-count.html">
         <link rel="import" href="elements/vin-wait.html">
@@ -81,17 +83,18 @@
                         <iron-selector selected="{{page}}" attr-for-selected="name">
                             <a name="vin-chart">VIN Chart</a>
                             <a name="vin-color-chart">VINs by Color Chart</a>
-                            <a name="waiter-table">VIN Waits by Color</a>
+                            <!-- <a name="waiter-table">VIN Waits by Color</a> -->
                             <a name="wait-table">VIN Wait Table</a>
                             <a name="about">About</a>
                         </iron-selector>
                     </div>
 
                     <div class="scroll-area">
+                        <div><filter-element id="filter-elements"></filter-element></div>
                         <iron-page-scroll selected="{{page}}" attr-for-selected="name">
                             <div name="vin-chart"><vin-chart id="chart-vin"></vin-chart></div>
                             <div name="vin-color-chart"><vin-color-count id="chart-vin-color"></vin-color-count></div>
-                            <div name="waiter-table"><vin-waiters id="chart-vin-waiters"></vin-waiters></div>
+                            <!-- <div name="waiter-table"><vin-waiters id="chart-vin-waiters"></vin-waiters></div> -->
                             <div name="wait-table"><vin-wait id="table-vin"></vin-wait></div>
                             <div name="about">
                                 <div class="about">
@@ -116,6 +119,49 @@
                             </div>
                         </iron-page-scroll>
                     </div>
+                    <script>
+                    (function() {
+                        var setChartParams = function(chart, params) {
+                            if (!params) {
+                                return;
+                            }
+                            if (params.wheels) {
+                                chart.setAttribute("wheels", params.wheels);
+                            } else {
+                                chart.removeAttribute("wheels");
+                            }
+                            if (params.country) {
+                                chart.setAttribute("country", params.country);
+                            } else {
+                                chart.removeAttribute("country");
+                            }
+                            if (params.start) {
+                                chart.setAttribute("start", params.start);
+                            } else {
+                                chart.removeAttribute("start");
+                            }
+                            if (params.end) {
+                                chart.setAttribute("end", params.end);
+                            } else {
+                                chart.removeAttribute("end");
+                            }
+                        };
+                        window.addEventListener('location-changed', function(e) {
+                            var params = document.querySelector('filter-element').params;
+                            setChartParams(document.getElementById('chart-vin'), params);
+                            setChartParams(document.getElementById('chart-vin-color'), params);
+                            //setChartParams(document.getElementById('chart-vin-waiters', e.detail));
+                            setChartParams(document.getElementById('table-vin'), params);
+                        });
+                        var refresh = function() {
+                            document.querySelector('#chart-vin').chartRefresh();
+                            document.querySelector('#chart-vin-color').chartRefresh();
+                            document.querySelector('#table-vin').chartRefresh();
+                        };
+                        document.querySelector('filter-element').addEventListener('data-loaded-changed', refresh);
+                        document.querySelector('filter-element').addEventListener('refresh', refresh);
+                    }());
+                    </script>
                 </div>
             </template>
         </dom-bind>

@@ -6,6 +6,10 @@ var db = require('../../util/db');
 var vinChart = {
     paths: ['/vinChartData/'],
     requestHandler: function(req, res, next) {
+        var startDate = req.query.start;
+        var endDate = req.query.end;
+        var country = req.query.country;
+        var wheels = req.query.wheels;
         var reservationCollection = db.get('reservation');
 
         var weekIntervals = function(startDate, endDate) {
@@ -26,12 +30,28 @@ var vinChart = {
           return dates;
         };
         // Pull all reservations where VIN assignment date is not null and VIN is not null
-        reservationCollection.find( { vin: { $ne: null }, vinDate: { $ne: null }} ).then(function(reservationData) {
+        var query = { vin: { $ne: null }, vinDate: { $ne: null }};
+        if (startDate) {
+            query.vinDate.$gte = new Date(startDate);
+        }
+        if (endDate) {
+            query.vinDate.$lte = new Date(endDate);
+        }
+        if (country) {
+            query.country = country;
+        }
+        if (wheels) {
+            query.wheels = wheels == 'aero' ? "18 inch Aero" : "19 inch Sport";
+        }
+        reservationCollection.find( query ).then(function(reservationData) {
             if (reservationData.length < 1) {
-                return { "vinData": [], "trendData": [] };
+                res.send({ "vinData": [], "trendData": [] });
+                return;
             }
           var results = {};
-          results["vinData"] = reservationData.map( x => ({ "x": x.vinDate, "y": x.vin }));
+          const options = {year: 'numeric', month: 'short', day: 'numeric' };
+          const formatDate = (d) => d.toLocaleDateString('en-US', options);
+          results["vinData"] = reservationData.map( x => ({ "x": formatDate(x.vinDate), "y": x.vin }));
           var minDate = new Date(reservationData.reduce( (a, c) => a < c.vinDate ? a : c.vinDate ).valueOf());
           var maxDate = reservationData.reduce( (a, c) => a > c.vinDate ? a : c.vinDate );
           var slopeIntervalBetweenDates = function(dataSet, date1, date2) {
@@ -55,14 +75,14 @@ var vinChart = {
           };
           let intervals = weekIntervals(minDate, maxDate);
           let slopeIntervalPoints = [];
-          for (var i = 1; i <= intervals.length; i++) {
+          for (var i = 1; i < intervals.length; i++) {
             var date1 = intervals[i-1];
             var date2 = i < intervals.length ? intervals[i] : new Date();
             slopeIntervalPoints.push(slopeIntervalBetweenDates(reservationData, date1, date2));
           }
           const first = slopeIntervalPoints[0];
-          const firstResult = {"x": new Date(first.start.valueOf()), "y": (first.slope * first.start.getTime()) + first.interval };
-          results["trendData"] = slopeIntervalPoints.map( p => ({"x": new Date(p.end.valueOf()), "y": (p.slope * p.end.getTime()) + p.interval }));
+          const firstResult = {"x": new Date(formatDate(first.start)), "y": (first.slope * first.start.getTime()) + first.interval };
+          results["trendData"] = slopeIntervalPoints.map( p => ({"x": formatDate(p.end), "y": (p.slope * p.end.getTime()) + p.interval }));
           results["trendData"].unshift(firstResult);
           res.send(results);
         });
